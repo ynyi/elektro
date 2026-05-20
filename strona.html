@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz: Podstawy Elektroniki</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131c;
+    --border: #1e1e2e;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --correct: #10b981;
+    --wrong: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --glow: rgba(124,58,237,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(124,58,237,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(6,182,212,0.06) 0%, transparent 60%);
+  }
+
+  header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .chip {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  /* Scoreboard */
+  #scoreboard {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+
+  .score-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 24px;
+    text-align: center;
+    min-width: 100px;
+  }
+
+  .score-pill .num {
+    font-size: 28px;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .score-pill .label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #num-score { color: var(--accent2); }
+  #num-streak { color: #f59e0b; }
+
+  /* Progress bar */
+  #progress-wrap {
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 8px;
+  }
+
+  #progress-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  #progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  #progress-text {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    text-align: right;
+    margin-bottom: 6px;
+  }
+
+  /* Question card */
+  #quiz-container {
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .question-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .q-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .q-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .q-topic {
+    font-size: 11px;
+    background: rgba(124,58,237,0.15);
+    color: #a78bfa;
+    padding: 3px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.5px;
+  }
+
+  .question-text {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    color: #f1f5f9;
+  }
+
+  /* Answer buttons */
+  .answers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .answer-btn {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .answer-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--glow);
+    transform: translateX(3px);
+  }
+
+  .answer-btn:disabled { cursor: default; }
+
+  .answer-btn .letter {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    color: var(--muted);
+  }
+
+  .answer-btn:hover:not(:disabled) .letter {
+    background: var(--accent);
+    color: white;
+  }
+
+  .answer-btn.correct {
+    border-color: var(--correct);
+    background: rgba(16,185,129,0.1);
+  }
+
+  .answer-btn.correct .letter {
+    background: var(--correct);
+    color: white;
+  }
+
+  .answer-btn.wrong {
+    border-color: var(--wrong);
+    background: rgba(239,68,68,0.1);
+  }
+
+  .answer-btn.wrong .letter {
+    background: var(--wrong);
+    color: white;
+  }
+
+  /* Feedback */
+  #feedback {
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  #feedback.correct {
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: #6ee7b7;
+    display: block;
+  }
+
+  #feedback.wrong {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: #fca5a5;
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Next button */
+  #next-btn {
+    display: none;
+    width: 100%;
+    max-width: 720px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #6d28d9);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+    margin-bottom: 30px;
+  }
+
+  #next-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(124,58,237,0.4);
+  }
+
+  /* Results screen */
+  #results {
+    display: none;
+    width: 100%;
+    max-width: 720px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .results-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .results-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .big-score {
+    font-size: 80px;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    line-height: 1;
+    background: linear-gradient(135deg, #fff, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .results-label {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 32px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .res-stat {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 8px;
+  }
+
+  .res-stat .n {
+    font-size: 24px;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .res-stat .l {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  .grade-text {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  #restart-btn {
+    background: linear-gradient(135deg, var(--accent), #6d28d9);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 16px 40px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+  }
+
+  #restart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(124,58,237,0.4);
+  }
+
+  /* Shake animation for wrong answer */
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)}
+    80%{transform:translateX(5px)}
+  }
+
+  .shake { animation: shake 0.4s ease; }
+
+  /* Timer bar */
+  #timer-wrap {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  #timer-bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  #timer-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--correct), var(--accent2));
+    border-radius: 99px;
+    transition: width 0.1s linear, background 0.5s;
+    width: 100%;
+  }
+
+  #timer-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    width: 30px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="chip">⚡ KOLOS PRZYGOTOWANIE</div>
+  <h1>Podstawy Elektroniki</h1>
+  <p class="subtitle">Quiz z materiału — rezystory, kondensatory, półprzewodniki, diody, tranzystory</p>
+</header>
+
+<div id="scoreboard">
+  <div class="score-pill">
+    <div class="num" id="num-score">0</div>
+    <div class="label">Punkty</div>
+  </div>
+  <div class="score-pill">
+    <div class="num" id="num-streak" style="color:#f59e0b">0🔥</div>
+    <div class="label">Seria</div>
+  </div>
+  <div class="score-pill">
+    <div class="num" id="num-correct" style="color:var(--correct)">0</div>
+    <div class="label">Poprawne</div>
+  </div>
+</div>
+
+<div id="progress-wrap">
+  <div id="progress-text">Pytanie 1 / 30</div>
+  <div id="progress-bar-track"><div id="progress-bar-fill"></div></div>
+</div>
+
+<div id="timer-wrap">
+  <div id="timer-bar-track"><div id="timer-bar-fill"></div></div>
+  <div id="timer-text">30</div>
+</div>
+
+<div id="quiz-container">
+  <div class="question-card" id="question-card">
+    <div class="q-meta">
+      <span class="q-num" id="q-num">P.01</span>
+      <span class="q-topic" id="q-topic">Rezystory</span>
+    </div>
+    <div class="question-text" id="q-text"></div>
+    <div class="answers" id="answers"></div>
+    <div id="feedback"></div>
+  </div>
+</div>
+
+<button id="next-btn" onclick="nextQuestion()">Następne pytanie →</button>
+
+<div id="results">
+  <div class="results-card">
+    <div class="big-score" id="res-score">0%</div>
+    <div class="results-label">wynik końcowy</div>
+    <div class="results-grid">
+      <div class="res-stat">
+        <div class="n" style="color:var(--correct)" id="res-correct">0</div>
+        <div class="l">Poprawne</div>
+      </div>
+      <div class="res-stat">
+        <div class="n" style="color:var(--wrong)" id="res-wrong">0</div>
+        <div class="l">Błędne</div>
+      </div>
+      <div class="res-stat">
+        <div class="n" style="color:#f59e0b" id="res-best">0</div>
+        <div class="l">Najl. seria</div>
+      </div>
+    </div>
+    <div class="grade-text" id="res-grade"></div>
+    <button id="restart-btn" onclick="restart()">🔄 Zagraj ponownie</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+ {
+    topic: "Półprzewodniki",
+    q: "W półprzewodnikach typu N większościowymi nośnikami ładunku są:",
+    a: [
+      "dziury", 
+      "dziury i elektrony", 
+      "elektrony", 
+    ],
+    c: 2,
+    ex: "W półprzewodniku typu N (negative) głównymi nośnikami prądu są elektrony swobodne wprowadzane przez domieszki donorowe."
+  },
+  {
+    topic: "Złącze PN",
+    q: "Warstwa zaporowa powstaje w wyniku:",
+    a: [
+      "dyfuzji jonów ujemnych w rejonie styku obszaru typu N z obszarem typu P", 
+      "dyfuzji nośników większościowych w rejonie styku obszaru typu N z obszarem typu P", 
+      "dyfuzji jonów dodatnich w rejonie styku obszaru typu N z obszarem typu P", 
+    ],
+    c: 1,
+    ex: "Warstwa zaporowa tworzy się spontanicznie poprzez dyfuzję swobodnych elektronów i dziur przez granicę złącza i ich wzajemną rekombinację."
+  },
+  {
+    topic: "Złącze PN",
+    q: "Wytworzona w złączu PN warstwa zaporowa jest:",
+    a: [
+      "dobrym izolatorem", 
+      "dobrym przewodnikiem", 
+      "izolatorem lub przewodnikiem w zależności od przyłożonego napięcia zewnętrznego", 
+    ],
+    c: 0,
+    ex: "Stan warstwy zaporowej zależy od polaryzacji zewnętrznej: napięcie przewodzenia ją zwęża (przewodzi), a napięcie zaporowe ją rozszerza (izoluje)."
+  },
+  {
+    topic: "Złącze PN",
+    q: "O polaryzacji złącza PN w kierunku zaporowym mówimy wtedy, kiedy:",
+    a: [
+      "do półprzewodnika typu P przyłożymy potencjał wyższy, a do typu N niższy", 
+      "do półprzewodnika typu N przyłożymy potencjał wyższy, a do typu P niższy", 
+      "złącze zawsze jest spolaryzowane w kierunku przewodzenia", 
+    ],
+    c: 1,
+    ex: "Polaryzacja zaporowa występuje, gdy potencjał dodatni (plus) podłączymy do obszaru N, a ujemny (minus) do obszaru P."
+  },
+  {
+    topic: "Złącze PN",
+    q: "W wyniku przyłożenia napięcia w kierunku przewodzenia złącze PN:",
+    a: [
+      "przewodzi prąd i ma małą rezystancję", 
+      "nie przewodzi prądu", 
+      "przewodzi prąd i ma dużą rezystancję", 
+    ],
+    c: 0,
+    ex: "Napięcie przewodzenia przełamuje barierę potencjału warstwy zaporowej, co umożliwia swobodny przepływ prądu przy niskim oporze."
+  },
+  {
+    topic: "Diody",
+    q: "Napięciem progowym na charakterystyce prądowo-napięciowej diody nazywamy:",
+    a: [
+      "napięcie, pod wpływem którego prąd w kierunku przewodzenia zaczyna wyraźnie rosnąć", 
+      "napięcie wsteczne, pod wpływem którego prąd zaczyna gwałtownie rosnąć", 
+      "napięcie, pod wpływem którego dioda zaczyna przewodzić prąd wsteczny", 
+    ],
+    c: 0,
+    ex: "Napięcie progowe (kolano charakterystyki) to wartość, po której przekroczeniu złącze zaczyna gwałtownie przewodzić prąd w kierunku przewodzenia (ok. 0.7V dla krzemu)."
+  },
+  {
+    topic: "Fotodiody",
+    q: "Podczas pracy fotodioda jest spolaryzowana w kierunku wstecznym i zachowuje się jak:",
+    a: [
+      "rezystor, w którym opór zależy od strumienia światła", 
+      "rezystor, w którym opór nie zależy od strumienia światła", 
+      "bateria słoneczna", 
+    ],
+    c: 0,
+    ex: "W trybie fotorezystancyjnym fotodiody prąd ciemny jest minimalny, a padające światło generuje nośniki prądu, proporcjonalnie zmieniając jej konduktancję."
+  },
+  {
+    topic: "Fotoogniwa",
+    q: "Wytwarzana w fotoogniwie siła elektromotoryczna zależy od:",
+    a: [
+      "napięcia zasilającego", 
+      "od napięcia polaryzacji w kierunku przewodzenia", 
+      "natężenia światła", 
+    ],
+    c: 2,
+    ex: "Fotoogniwo działa bez zasilania zewnętrznego. Silniejsze oświetlenie generuje więcej par elektron-dziura, co zwiększa indukowaną siłę elektromotoryczną."
+  },
+  {
+    topic: "Diody LED",
+    q: "Dioda luminescencyjna emituje światło:",
+    a: [
+      "w rezultacie procesu rekombinacji elektronów i dziur", 
+      "onizacji", 
+      " LED nie emituje, tylko pochłania światło", 
+    ],
+    c: 0,
+    ex: "Emisja światła w LED zachodzi, gdy wstrzyknięte nośniki mniejszościowe rekombują z nośnikami większościowymi, oddając nadmiar energii w postaci fotonu."
+  },
+  {
+    topic: "Diody LED",
+    q: "Długość fali światła emitowanego przez jednokolorową diodę luminescencyjną zależy od:",
+    a: [
+      "napięcia zasilającego", 
+      "użytego materiału półprzewodnika i materiału domieszki", 
+      "natężenia prądu płynącego przez diodę", 
+    ],
+    c: 1,
+    ex: "Długość fali (kolor światła) zależy bezpośrednio od szerokości przerwy energetycznej (Eg) zastosowanego kryształu półprzewodnikowego."
+  },
+  {
+    topic: "Diody Zenera",
+    q: "Obszarem roboczym na charakterystyce prądowo-napięciowej diody Zenera jest:",
+    a: [
+      "obszar gdzie dioda ma dodatni współczynnik temperaturowy", 
+      "obszar przebicia", 
+      "obszar polaryzacji w kierunku przewodzenia", 
+    ],
+    c: 1,
+    ex: "Dioda Zenera jest zaprojektowana do stabilizacji napięcia w warunkach kontrolowanego przebicia lawinowego lub Zenera przy polaryzacji wstecznej."
+  },
+  {
+    topic: "Varicapy",
+    q: "Dioda pojemnościowa to dioda półprzewodnikowa której pojemność:",
+    a: [
+      "jest stała niezależnie od napięcia przyłożonego do złącza PN w kierunku zaporowym", 
+      "zależy jedynie od pojemności złącza PN przy zerowej polaryzacji", 
+      "zależy od napięcia przyłożonego do złącza PN w kierunku zaporowym", 
+    ],
+    c: 2,
+    ex: "Zmiana napięcia wstecznego zmienia grubość warstwy zaporowej, która działa jak dielektryk o zmiennej szerokości między okładzinami kondensatora."
+  },
+  {
+    topic: "Tranzystory",
+    q: "Tranzystorami bipolarnymi nazywamy tranzystory w których w procesie przewodzenia biorą udział:",
+    a: [
+      "zarówno elektrony jak i dziury", 
+      "tylko dziury", 
+      "tylko elektrony", 
+    ],
+    c: 0,
+    ex: "Nazwa 'bipolarny' odnosi się do dwóch rodzajów nośników prądu (elektronów i dziur) zaangażowanych jednocześnie w przepływ prądu przez strukturę."
+  },
+  {
+    topic: "Tranzystory bipolarne",
+    q: "Jeżeli do tranzystora bipolarnego NPN podłączymy dwa źródła napięcia stałego tak, że złącze baza-emiter będzie spolaryzowane w kierunku przewodzenia, a złącze kolektor-baza w kierunku zaporowym to:",
+    a: [
+      "przez tranzystor płynie tylko słaby prąd wsteczny", 
+      "tranzystor nie przewodzi prądu", 
+      "tranzystor przewodzi prąd"
+    ],
+    c: 2,
+    ex: "Taki stan polaryzacji wprowadza tranzystor w aktywny stan pracy (normalny). Umożliwia to przepływ prądu kolektora sterowanego prądem bazy."
+  },
+  {
+    topic: "Tranzystory bipolarne",
+    q: "Współczynnikiem wzmocnienia prądowego β tranzystora bipolarnego nazywamy:",
+    a: [
+      "stosunek przyrostu prądu kolektora do przyrostu prądu bazy", 
+      "stosunek prądu emitera do prądu kolektora", 
+      "stosunek prądu emitera do prądu bazy"
+    ],
+    c: 0,
+    ex: "Współczynnik β (lub h21E) dla sygnałów zmiennych definiuje się jako dynamiczny stosunek zmiany prądu wyjściowego (kolektora) do zmiany prądu wejściowego (bazy): β = ΔIc / ΔIb."
+  },
+  {
+    topic: "Tranzystory bipolarne",
+    q: "Charakterystyka wejściowa tranzystora bipolarnego to zależność:",
+    a: [
+      "prądu bazy od napięcia baza-emiter", 
+      "prądu bazy od prądu kolektora", 
+      "prądu bazy od prądu emitera"
+    ],
+    c: 0,
+    ex: "Charakterystyka wejściowa opisuje zależność prądu wejściowego (Ib) od napięcia wejściowego (Ube) przy stałym napięciu wyjściowym (Uce)."
+  },
+  {
+    topic: "Tranzystory bipolarne",
+    q: "Charakterystyka wyjściowa tranzystora bipolarnego to zależność:",
+    a: [
+      "prądu kolektora od prądu emitera", 
+      "prądu kolektora od napięcia kolektor-emiter", 
+      "prądu kolektora od napięcia baza-emiter"
+    ],
+    c: 1,
+    ex: "Charakterystyka wyjściowa przedstawia zależność prądu wyjściowego (Ic) od napięcia wyjściowego (Uce) dla różnych, ustalonych wartości prądu bazy (Ib)."
+  },
+  {
+    topic: "Tranzystory FET",
+    q: "Tranzystor unipolarny FET zwany tranzystorem polowym jest elementem półprzewodnikowym:",
+    a: [
+      "sterowanym prądowo", 
+      "sterowanym przez pole magnetyczne", 
+      "sterowanym napięciowo"
+    ],
+    c: 2,
+    ex: "W tranzystorach polowych prąd wyjściowy jest kontrolowany potencjałem (napięciem) przyłożonym do bramki, która generuje pole elektryczne."
+  },
+  {
+    topic: "Tranzystory JFET",
+    q: "W tranzystorze unipolarnym złączowym (JFET) rolę izolatora między bramką a źródłem pełni:",
+    a: [
+      "warstwa zaporowa", 
+      "warstwa dwutlenku krzemu", 
+      "warstwa polikrystalicznego krzemu"
+    ],
+    c: 0,
+    ex: "W JFET bramka tworzy złącze p-n z kanałem. Pracuje ono w polaryzacji zaporowej, a powstała warstwa zaporowa odcina dopływ prądu bramki."
+  },
+  {
+    topic: "Tranzystory MOSFET",
+    q: "W tranzystorze unipolarnym (MOSFET) nowej generacji (Intel Core i7) rolę izolatora między bramką a źródłem pełni:",
+    a: [
+      "warstwa polikrystalicznego krzemu", 
+      "warstwa o wysokiej stałej dielektrycznej prawdopodobnie na bazie hafnu", 
+      "warstwa dwutlenku krzemu"
+    ],
+    c: 1,
+    ex: "W nowoczesnych procesorach tradycyjny SiO2 zastąpiono tzw. dielektrykami high-k (zwykle na bazie tlenku hafnu), aby zredukować prądy upływu przy miniaturyzacji."
+  },
+  {
+    topic: "Tranzystory MOSFET",
+    q: "Warstwa inwersyjna to:",
+    a: [
+      "warstwa półprzewodnika o przeciwnym typie przewodnictwa niż podłoże", 
+      "warstwa półprzewodnika o takim samym typie przewodnictwa jak podłoże", 
+      "warstwa o przeciwnym typie przewodnictwa jak obszary drenu i źródła"
+    ],
+    c: 0,
+    ex: "Inwersja oznacza odwrócenie typu przewodnictwa. Przykładowo w podłożu typu P, pod wpływem napięcia bramki, przy jej powierzchni gromadzą się elektrony tworząc warstwę typu N."
+  },
+  {
+    topic: "Tranzystory MOSFET",
+    q: "Napięcie progowe tranzystora MOSFET jest to napięcie:",
+    a: [
+      "napięcie zewnętrzne między drenem a źródłem", 
+      "napięcie na progu kanału", 
+      "bramka-źródło po przekroczeniu którego w półprzewodniku powstaje warstwa inwersyjna"
+    ],
+    c: 2,
+    ex: "Napięcie progowe (Uth) to minimalne napięcie Ugs niezbędne do zaindukowania kanału przewodzącego (warstwy inwersyjnej) pod bramką."
+  },
+  {
+    topic: "Tranzystory MOSFET",
+    q: "Tranzystor MOSFET z kanałem wbudowanym to taki w którym:",
+    a: [
+      "istnieje kanał przy zerowym napięciu bramka-źródło", 
+      "kanał w postaci warstwy inwersyjnej tworzy się dopiero, gdy napięcie bramka-źródło przekroczy napięcie progowe", 
+      "kanał w postaci warstwy inwersyjnej tworzy się po przyłożeniu dowolnego napięcia zewnętrznego"
+    ],
+    c: 0,
+    ex: "Tranzystory z kanałem wbudowanym (depletion mode) przewodzą prąd przy Ugs = 0V. Dopiero przyłożenie odpowiedniego napięcia pozwala ten kanał zamknąć."
+  },
+  {
+    topic: "Wzmacniacze",
+    q: "Jakie jest znaczenie rezystorów na schemacie wzmacniacza z tranzystorem bipolarnym?",
+    a: [
+      "ustalają punkt pracy tranzystora bipolarnego", 
+      "ustalają napięcie wyjściowe", 
+      "ustalają temperaturę pracy wzmacniacza"
+    ],
+    c: 0,
+    ex: "Rezystory w strukturze polaryzacji (np. dzielnik napięcia R1/R2 lub rezystor bazowy Rb) definiują spoczynkowy prąd bazy i napięcie kolektora, czyli punkt pracy Q."
+  },
+  {
+    topic: "Wzmacniacze",
+    q: "W jakim celu we wzmacniaczach stosujemy sprzężenie zwrotne:",
+    a: [
+      "sprzężenia dwóch tranzystorów we wzmacniaczu", 
+      "stabilizacji punktu pracy wzmacniacza", 
+      "ograniczenia temperatury wzmacniacza"
+    ],
+    c: 1,
+    ex: "Ujemne sprzężenie zwrotne w układach wzmacniaczy stabilizuje parametry pracy (np. wzmocnienie, punkt pracy) przeciwdziałając wpływowi zmian temperatury czy rozrzutu parametrów elementów."
+  },
+  {
+    topic: "Prąd przemienny",
+    q: "Prądem przemiennym nazywamy:",
+    a: [
+      "każdy prąd okresowo zmienny", 
+      "prąd, którego wartości chwilowe przyjmują z określoną częstotliwością na przemian takie same wartości dodatnie i ujemne", 
+      "prąd, którego wartości chwilowe podlegają zmianom w powtarzalny sposób"
+    ],
+    c: 1,
+    ex: "Prąd przemienny to szczególny przypadek prądu okresowo zmiennego, którego wartość średnia za okres wynosi zero (wartości dodatnie i ujemne równoważą się)."
+  },
+  {
+    topic: "Teoria obwodów",
+    q: "Miarą oporu czynnego z jakim dany element obwodu przeciwstawia się przepływowi prądu jest:",
+    a: [
+      "konduktancja", 
+      "rezystancja", 
+      "rezystywność"
+    ],
+    c: 1,
+    ex: "Rezystancja (opór elektryczny) określa zdolność elementu do przeciwstawiania się przepływowi prądu elektrycznego."
+  },
+  {
+    topic: "Prawo Ohma",
+    q: "Prawo Ohma mówi, że przy stałej wartości rezystancji natężenie prądu wraz ze wzrostem napięcia:",
+    a: [
+      "maleje liniowo", 
+      "wzrasta liniowo", 
+      "zmienia się odwrotnie proporcjonalnie do wartości rezystancji"
+    ],
+    c: 1,
+    ex: "Zależność I = U/R przy stałym R oznacza, że prąd jest wprost proporcjonalny do napięcia (rośnie liniowo wraz z nim)."
+  },
+  {
+    topic: "Rezystancja",
+    q: "Rezystancja przewodnika po ogrzaniu jest zależna od:",
+    a: [
+      "tylko temperaturowego współczynnika rezystancji", 
+      "jego rezystancji w temperaturze 20 °C oraz przyłożonego napięcia", 
+      "temperaturowego współczynnika rezystancji oraz jego rezystancji w temperaturze 20 °C"
+    ],
+    c: 2,
+    ex: "Wzór na rezystancję w danej temperaturze to R(T) = R20 * (1 + alpha * Delta_T), gdzie kluczowa jest rezystancja początkowa R20 oraz współczynnik alpha."
+  },
+  {
+    topic: "Elementy nieliniowe",
+    q: "Dla rezystora nieliniowego stosunek napięcia na jego zaciskach do prądu płynącego przez rezystor nazywamy:",
+    a: [
+      "rezystancją statyczną", 
+      "rezystancją dynamiczną", 
+      "napięciem statycznym"
+    ],
+    c: 0,
+    ex: "Rezystancja statyczna elementu nieliniowego w danym punkcie pracy to bezwzględny stosunek napięcia do prądu w tym punkcie (R = U/I)."
+  },
+  {
+    topic: "Teoria obwodów",
+    q: "Obwodem rozgałęzionym nazywamy obwód złożony z:",
+    a: [
+      "co najmniej trzech gałęzi", 
+      "co najmniej jednej gałęzi", 
+      "co najmniej dwóch gałęzi"
+    ],
+    c: 0,
+    ex: "Obwód rozgałęziony musi posiadać węzły, w których łączą się co najmniej trzy gałęzie, umożliwiając rozpływ prądu w różnych kierunkach."
+  },
+  {
+    topic: "Teoria obwodów",
+    q: "Prąd płynący w gałęzi możemy obliczyć na podstawie wzoru (dla gałęzi z rysunku):",
+    a: [
+      "I = R(E - U13)", 
+      "I = G(E + U12)", 
+      "I = (U12 + U13) / R"
+    ],
+    c: 1,
+    ex: "Z prawa Ohma dla gałęzi aktywnej: prąd I wyraża się wzorem I = (U12 + E) / R. Ponieważ konduktancja G = 1/R, wzór można zapisać w postaci I = G(E + U12)."
+  },
+  {
+    topic: "Prawa Kirchhoffa",
+    q: "Zgodnie z pierwszym prawem Kirchhoffa dla tego węzła równanie bilansu prądów możemy zapisać następująco:",
+    a: [
+      "I1 + I2 + I3 - I4 - I5 = 0", 
+      "I1 - I2 - I3 = I4 + I5", 
+      "I1 + I2 + I3 = I4 - I5"
+    ],
+    c: 0,
+    ex: "Pierwsze prawo Kirchhoffa mówi, że suma prądów wpływających do węzła (I1, I2, I3) jest równa sumie prądów wypływających (I4, I5). Po przeniesieniu wszystkich prądów na lewą stronę równania otrzymujemy: I1 + I2 + I3 - I4 - I5 = 0."
+  },
+  {
+    topic: "Prawa Kirchhoffa",
+    q: "Równanie bilansu napięć zgodne z drugim prawem Kirchhoffa dla tego obwodu ma następującą postać:",
+    a: [
+      "E1 + E2 - E3 = R1*I + R2*I + R3*I", 
+      "E1 - E2 + E3 = R1*I + R2*I + R3*I", 
+      "E1 - E2 + E3 = R1*I - R2*I - R3*I"
+    ],
+    c: 1,
+    ex: "Zgodnie z II prawem Kirchhoffa, sumujemy siły elektromotoryczne zgodnie z kierunkiem obiegu oczka (zgodnie ze wskazówkami zegara): E1 ma zwrot zgodny (+), E2 przeciwny (-), a E3 zgodny (+), co daje E1 - E2 + E3. Prąd I płynie zgodnie z kierunkiem oczka, więc wszystkie spadki napięć na rezystorach są dodatnie."
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let streak = 0;
+let bestStreak = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let answered = false;
+let timerInterval = null;
+let timeLeft = 60;
+const shuffled = [...questions].sort(() => Math.random() - 0.5);
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 60;
+  updateTimerBar();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerBar();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (!answered) timeOut();
+    }
+  }, 1000);
+}
+
+function updateTimerBar() {
+  const fill = document.getElementById('timer-bar-fill');
+  const txt = document.getElementById('timer-text');
+  const pct = (timeLeft / 60) * 100;
+  fill.style.width = pct + '%';
+  txt.textContent = timeLeft;
+  if (timeLeft <= 10) {
+    fill.style.background = 'linear-gradient(90deg, #ef4444, #f97316)';
+  } else if (timeLeft <= 20) {
+    fill.style.background = 'linear-gradient(90deg, #f59e0b, #10b981)';
+  } else {
+    fill.style.background = 'linear-gradient(90deg, var(--correct), var(--accent2))';
+  }
+}
+
+function timeOut() {
+  answered = true;
+  streak = 0;
+  wrongCount++;
+  document.getElementById('num-streak').textContent = '0🔥';
+  const q = shuffled[currentQ];
+  const btns = document.querySelectorAll('.answer-btn');
+  btns.forEach(b => { b.disabled = true; });
+  btns[q.c].classList.add('correct');
+  const fb = document.getElementById('feedback');
+  fb.className = 'wrong';
+  fb.innerHTML = '⏰ <strong>Czas minął!</strong> Odpowiedź: <strong>' + ['A','B','C','D'][q.c] + '</strong>. ' + q.ex;
+  document.getElementById('next-btn').style.display = 'block';
+  updateStats();
+}
+
+function loadQuestion() {
+  answered = false;
+  const q = shuffled[currentQ];
+  document.getElementById('q-num').textContent = 'P.' + String(currentQ+1).padStart(2,'0');
+  document.getElementById('q-topic').textContent = q.topic;
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('feedback').className = '';
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+
+  const answersEl = document.getElementById('answers');
+  answersEl.innerHTML = '';
+  q.a.forEach((ans, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.innerHTML = `<span class="letter">${['A','B','C','D'][i]}</span>${ans}`;
+    btn.onclick = () => selectAnswer(i);
+    answersEl.appendChild(btn);
+  });
+
+  document.getElementById('progress-text').textContent = `Pytanie ${currentQ+1} / ${shuffled.length}`;
+  document.getElementById('progress-bar-fill').style.width = ((currentQ / shuffled.length) * 100) + '%';
+  startTimer();
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+  const q = shuffled[currentQ];
+  const btns = document.querySelectorAll('.answer-btn');
+  btns.forEach(b => { b.disabled = true; });
+
+  const fb = document.getElementById('feedback');
+
+  if (idx === q.c) {
+    btns[idx].classList.add('correct');
+    const pts = Math.max(10, Math.round(timeLeft / 30 * 100));
+    score += pts + (streak >= 2 ? streak * 5 : 0);
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    correctCount++;
+    fb.className = 'correct';
+    const bonus = streak >= 2 ? ` (+${streak*5} za serię ${streak}🔥)` : '';
+    fb.innerHTML = `✅ <strong>Dobrze! +${pts} pkt${bonus}</strong><br>${q.ex}`;
+  } else {
+    btns[idx].classList.add('wrong');
+    btns[q.c].classList.add('correct');
+    streak = 0;
+    wrongCount++;
+    document.getElementById('question-card').classList.add('shake');
+    setTimeout(() => document.getElementById('question-card').classList.remove('shake'), 500);
+    fb.className = 'wrong';
+    fb.innerHTML = `❌ <strong>Błąd.</strong> Poprawna: <strong>${['A','B','C','D'][q.c]}. ${q.a[q.c]}</strong><br>${q.ex}`;
+  }
+
+  fb.style.display = 'block';
+  updateStats();
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+function updateStats() {
+  document.getElementById('num-score').textContent = score;
+  document.getElementById('num-streak').textContent = streak + (streak >= 2 ? '🔥' : '');
+  document.getElementById('num-correct').textContent = correctCount;
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= shuffled.length) {
+    showResults();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showResults() {
+  clearInterval(timerInterval);
+  document.querySelector('header').style.display = 'none';
+  document.getElementById('scoreboard').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('timer-wrap').style.display = 'none';
+  document.getElementById('quiz-container').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+
+  const pct = Math.round((correctCount / shuffled.length) * 100);
+  document.getElementById('res-score').textContent = pct + '%';
+  document.getElementById('res-correct').textContent = correctCount;
+  document.getElementById('res-wrong').textContent = wrongCount;
+  document.getElementById('res-best').textContent = bestStreak;
+
+  let grade = '';
+  if (pct >= 90) grade = '🏆 Znakomicie! Jesteś gotowy na kolosa!';
+  else if (pct >= 75) grade = '💪 Dobry wynik! Powtórz słabsze tematy.';
+  else if (pct >= 60) grade = '📚 Nieźle, ale warto powtórzyć materiał.';
+  else if (pct >= 50) grade = '⚠️ Jeszcze trochę nauki i będzie lepiej!';
+  else grade = '📖 Koniecznie powtórz cały materiał!';
+
+  document.getElementById('res-grade').textContent = grade;
+}
+
+function restart() {
+  currentQ = 0; score = 0; streak = 0; bestStreak = 0;
+  correctCount = 0; wrongCount = 0; answered = false;
+  shuffled.sort(() => Math.random() - 0.5);
+
+  document.querySelector('header').style.display = '';
+  document.getElementById('scoreboard').style.display = '';
+  document.getElementById('progress-wrap').style.display = '';
+  document.getElementById('timer-wrap').style.display = '';
+  document.getElementById('quiz-container').style.display = '';
+  document.getElementById('results').style.display = 'none';
+  updateStats();
+  loadQuestion();
+}
+
+// Start!
+loadQuestion();
+</script>
+</body>
+</html>
